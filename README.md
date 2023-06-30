@@ -81,15 +81,14 @@ _______/<<^^^^^^^^^^^^^^^^^^^\____________________________  audio in
 
 ## starting MOD docker build environment
 
-These instructions assume that the alo source is at ```~/Projects/2018/moddevices/alo```
-
 ```
-docker run -ti --name mpb -p 9000:9000 -v ~/Projects/2018/moddevices/:/tmp/moddevices moddevices/mod-plugin-builder
+cd <path to alo source>
+docker buildx build -o /tmp/alo .
 ```
 
 ## build and deploy notes
 
-```/tmp/moddevices/alo/cycle.sh```
+```./cycle.sh```
 
 ## debug notes
 
