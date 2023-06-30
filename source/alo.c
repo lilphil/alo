@@ -297,6 +297,8 @@ instantiate(const LV2_Descriptor*     descriptor,
 	self->high_beat_offset = self->beat_len;
 	self->low_beat_offset = self->beat_len;
 
+	self->active = true;
+
 	log("Instantiate end");
 	return (LV2_Handle)self;
 }
@@ -420,8 +422,6 @@ static void
 activate(LV2_Handle instance)
 {
 	log("Activate");
-	Alo* self = (Alo*)instance;
-	self->active = true;
 }
 
 /**
@@ -679,6 +679,23 @@ run_events(Alo* self)
 }
 
 static void
+run_bypass(Alo* self, uint32_t n_samples)
+{
+	const float* const input_l  = self->ports.input_l;
+	const float* const input_r  = self->ports.input_r;
+	float* const output_l = self->ports.output_l;
+	float* const output_r = self->ports.output_r;
+
+	self->loopmix = fmin(1.0, *self->ports.mix / 50);
+	self->inmix = fmin(1, (100 - *self->ports.mix) / 50);
+
+	for (uint32_t pos = 0; pos < n_samples; pos++) {
+		output_l[pos] = self->inmix * input_l[pos];
+		output_r[pos] = self->inmix * input_r[pos];
+	}
+}
+
+static void
 run_loops(Alo* self, uint32_t n_samples)
 {
 	const float* const input_l  = self->ports.input_l;
@@ -774,8 +791,11 @@ run(LV2_Handle instance, uint32_t n_samples)
 	if (self->active) {
 		run_loops(self, n_samples);
 		run_clicks(self, n_samples);
-		run_events(self);
+	} else {
+		run_bypass(self, n_samples);
 	}
+
+	run_events(self);
 
 	if (! *(self->ports.enabled)) {
 		if (self->active)
