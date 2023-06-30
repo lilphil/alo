@@ -105,7 +105,7 @@ void log(const char *message, ...)
 	}
 
 	FILE* f;
-	f = fopen("/root/alo.log", "a+");
+	f = fopen("/tmp/alo.log", "a+");
 
 	char buffer[2048];
 	va_list argumentList;
@@ -195,6 +195,8 @@ typedef struct {
 	uint32_t low_beat_offset;
 	float inmix;
 	float loopmix;
+
+	bool  active;
 } Alo;
 
 void
@@ -418,6 +420,8 @@ static void
 activate(LV2_Handle instance)
 {
 	log("Activate");
+	Alo* self = (Alo*)instance;
+	self->active = true;
 }
 
 /**
@@ -767,12 +771,18 @@ run(LV2_Handle instance, uint32_t n_samples)
 {
 	Alo* self = (Alo*)instance;
 
-	run_loops(self, n_samples);
-	run_clicks(self, n_samples);
-	run_events(self);
+	if (self->active) {
+		run_loops(self, n_samples);
+		run_clicks(self, n_samples);
+		run_events(self);
+	}
 
 	if (! *(self->ports.enabled)) {
-		reset(self);
+		if (self->active)
+			reset(self);
+		self->active = false;
+	} else {
+		self->active = true;
 	}
 }
 
